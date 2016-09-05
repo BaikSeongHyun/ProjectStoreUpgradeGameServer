@@ -1,0 +1,264 @@
+﻿using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Net;
+using System.Net.Sockets;
+
+public class TcpServer
+{
+	class AsyncData
+	{
+		public Socket clientSocket;
+		public const int messageMaxLength = 1024;
+		public byte[] message = new byte[messageMaxLength];
+		public int messageLength;
+	}
+	// event fleld
+	public delegate void OnAcceptedEvent(Socket socket);
+
+	public delegate void OnReceivedEvent(Socket socket,byte[] msg,int size);
+
+	public delegate void DisconnectClient(Socket socket);
+
+	public event OnAcceptedEvent OnAccepted;
+	public event OnReceivedEvent OnReceived;
+	public event DisconnectClient Disconnected;
+
+	// added client socket list
+	[SerializeField] List<Socket> clientSockets;
+
+	// field - use connect client (default information)
+	Socket listenSocket = null;
+	string serverIP;
+	int port;
+
+	//constructor - default
+	public TcpServer()
+	{
+		listenSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+		clientSockets = new List<Socket>();
+	}
+
+	// start tcp server
+	// set socket
+	// set async call back
+	public void ServerStart()
+	{
+		if( listenSocket.Connected )
+			return;
+
+		serverIP = GetLocalIPAddress();
+
+		// listen socket bind
+		listenSocket.Bind( new IPEndPoint( IPAddress.Parse( serverIP ), port ) );
+
+		// listen socket listen
+		listenSocket.Listen( 10 );
+
+		// add socket accept callback method
+		AsyncCallback acceptCallback = new AsyncCallback( AcceptAsyncCallback );
+		AsyncData asyncData = new AsyncData();
+		object asyncLinker = asyncData;
+		asyncLinker = listenSocket;
+		listenSocket.BeginAccept( acceptCallback, asyncLinker );
+
+	}
+
+	// close tcp server
+	public void ServerClose()
+	{
+		if( listenSocket == null )
+			return;
+
+
+		foreach ( Socket clientSocket in clientSockets )
+		{
+			try
+			{
+				clientSocket.Close();
+			}
+			catch ( SocketException e )
+			{
+				Debug.Log( e.ErrorCode );
+				Debug.Log( e.InnerException );
+				Debug.Log( "Server : Socket Exception - On Server Close " );
+			}
+			catch ( NullReferenceException e )
+			{
+				Debug.Log( e.Message );
+				Debug.Log( e.InnerException );
+				Debug.Log( "Server : Null Reference Exception - On Server Close " );
+			}
+		}
+
+		clientSockets.Clear();
+
+		listenSocket.Close();
+
+	}
+
+	// find local ip address
+	public static string GetLocalIPAddress()
+	{
+		var data = Dns.GetHostEntry( Dns.GetHostName() );
+
+		foreach ( var ip in data.AddressList )
+		{
+			if( ip.AddressFamily == AddressFamily.InterNetwork )
+				return ip.ToString();
+		}
+		throw new Exception( "Server : Local ip address not found" );       
+	}
+
+	// set port
+	public void SetPort( int _port )
+	{
+		if( listenSocket.Connected )
+			return;
+
+		port = _port;
+	}
+
+	// accept callback method
+	public void AcceptAsyncCallback( IAsyncResult asyncResult )
+	{
+		// add client socket
+		Socket listenSocket = (Socket) asyncResult.AsyncState;
+		Socket clientSocket = listenSocket.EndAccept( asyncResult );
+		clientSockets.Add( clientSocket );
+
+		if( OnAccepted != null )
+			OnAccepted( clientSocket );
+
+		// add socket receive callback method
+		AsyncCallback receiveCallback = new AsyncCallback( ReceiveAsyncCallback );
+		AsyncData asyncData = new AsyncData();
+		object asyncLinker = asyncData;
+
+		// start begin receive
+		try
+		{
+			clientSocket.BeginReceive( asyncData.message, 0, AsyncData.messageMaxLength, SocketFlags.None, ReceiveAsyncCallback, asyncLinker );
+		}
+		catch
+		{
+			DownClient( clientSocket );
+		}
+
+		// reset listen socket
+		AsyncCallback acceptCallback = new AsyncCallback( AcceptAsyncCallback );
+		asyncLinker = listenSocket;
+		listenSocket.BeginAccept( acceptCallback, asyncLinker );
+	}
+
+	public void ReceiveAsyncCallback( IAsyncResult asyncResult )
+	{
+		// data link
+		AsyncData asyncData = (AsyncData) asyncResult.AsyncState;
+		Socket clientSocket = asyncData.clientSocket;
+
+		// message receive
+		try
+		{
+			asyncData.messageLength = clientSocket.EndReceive( asyncResult );
+		}
+		catch
+		{
+			DownClient( clientSocket );
+			return;
+		}
+
+		// receive process
+		try
+		{
+			OnReceived( clientSocket, asyncData.message, asyncData.messageLength );
+		}
+		catch ( NullReferenceException e )
+		{
+			DownClient( clientSocket );
+			Debug.Log( e.Message );
+			Debug.Log( e.InnerException );
+			Debug.Log( "Server : Wrong Data structure - On ReceiveAsyncCallback" );
+		}
+		catch ( SocketException e )
+		{
+			DownClient( clientSocket );
+			Debug.Log( e.ErrorCode );
+			Debug.Log( e.InnerException );
+			Debug.Log( "Server : Disconnected client - On ReceiveAsyncCallback" );
+		}
+
+		// reset client socket
+		AsyncCallback receiveCallback = new AsyncCallback( ReceiveAsyncCallback );
+		try
+		{
+			clientSocket.BeginReceive( asyncData.message, 0, AsyncData.messageMaxLength, SocketFlags.None, ReceiveAsyncCallback, asyncData );
+		}
+		catch ( SocketException e )
+		{
+			DownClient( clientSocket );
+			Debug.Log( e.ErrorCode );
+			Debug.Log( e.InnerException );
+			Debug.Log( "Server :  Socket Exception - On ReceiveAsyncCallback" );
+		}
+		catch ( NullReferenceException e )
+		{
+			DownClient( clientSocket );
+			Debug.Log( e.Message );
+			Debug.Log( e.InnerException );
+			Debug.Log( "Server : Wrong Data structure - On ReceiveAsyncCallback" );
+		}
+	}
+
+	public int Send( Socket clientSocket, byte[] data, int size )
+	{
+		foreach ( Socket client in clientSockets )
+		{
+			if( client == clientSocket )
+			{
+				try
+				{
+					client.Send( data, size, SocketFlags.None );
+				}
+				catch ( SocketException e )
+				{
+					DownClient( client );
+					Debug.Log( e.ErrorCode );
+					Debug.Log( e.InnerException );
+					Debug.Log( "Server :  Socket Exception - On Send" );
+				}
+				catch ( NullReferenceException e )
+				{
+					DownClient( client );
+					Debug.Log( e.Message );
+					Debug.Log( e.InnerException );
+				}
+			}
+		}
+
+		return -1;
+	}
+
+	public void DownClient( Socket clientSocket )
+	{
+		try
+		{
+			clientSocket.Close();
+		}
+		catch ( SocketException e )
+		{
+			Debug.Log( e.ErrorCode );
+			Debug.Log( e.InnerException );
+			Debug.Log( "Server : Socket Exception - Down Client" );
+		}
+		catch ( NullReferenceException e )
+		{
+			Debug.Log( e.Message );
+			Debug.Log( e.InnerException );
+			Debug.Log( "Server : Null Reference Exception - Down Client" );
+		}
+	}
+
+}
