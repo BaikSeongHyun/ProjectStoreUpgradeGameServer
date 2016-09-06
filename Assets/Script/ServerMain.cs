@@ -10,11 +10,11 @@ using System.Net.Sockets;
 public class ServerMain : MonoBehaviour
 {
 	// server socket
-	[SerializeField] TcpServer mainProcesser;
+	[SerializeField] TcpServer networkProcesser;
 
 	// queue -> input / output check point
-	[SerializeField] Queue receiveCheckPoint;
-	[SerializeField] Queue sendCheckPoint;
+	[SerializeField] PacketQueue receiveQueue;
+	[SerializeField] PacketQueue sendQueue;
 
 	// delegate -> for packtet receive check
 	public delegate void ReceiveNotifier(Socket socket,byte[] data);
@@ -22,21 +22,31 @@ public class ServerMain : MonoBehaviour
 	// server notifier set -> socket library
 	Dictionary <int, ReceiveNotifier> notifierForServer = new Dictionary<int, ReceiveNotifier>();
 
+	// byte array data
+	byte[] receiveBuffer;
+	byte[] sendBuffer;
+	const int bufferSize = 2048;
+
 	// data initialize
 	void Awake()
 	{
-		receiveCheckPoint = new Queue();
-		sendCheckPoint = new Queue();
+		// allocate queue
+		receiveQueue = new PacketQueue();
+		sendQueue = new PacketQueue();
+
+		// allocate buffer
+		receiveBuffer = new byte[bufferSize];
+		sendBuffer = new byte[bufferSize];
+
 
 		//server process active 
-		mainProcesser = new TcpServer();
-		mainProcesser.OnReceived += OnReceivedPacketFromClient;
+		networkProcesser = new TcpServer();
 	}
 
 	// start main server
 	void Start()
 	{
-		StartMainServer();
+		StartServer();
 	}
 
 	// server process -> receive from client
@@ -45,31 +55,45 @@ public class ServerMain : MonoBehaviour
 
 	}
 
-	// server down
+	// server system off
 	void OnApplicationQuit()
 	{
-		mainProcesser.ServerClose();
-	}
-
-	// packet insert
-	private void OnReceivedPacketFromClient( Socket socket, byte[] msg, int size )
-	{
-		//receive & enqueue
-		//receiveCheckPoint.Enqueue( msg, size );
-
-		//classify use client socket
-		lock ( receiveCheckPoint )
-		{
-			
-		}
+		networkProcesser.ServerClose();
 	}
 
 	// public method
 
 	// start main server
-	public void StartMainServer()
+	public void StartServer()
 	{
-		mainProcesser.ServerStart();
+		networkProcesser.ServerStart();
+	}
+
+	// receive
+	public void Receive( Socket socket )
+	{
+		int count = receiveQueue.Count;
+
+		for ( int i = 0; i < count; i++ )
+		{
+			int receiveSize = 0;
+			receiveSize = receiveQueue.Dequeue( ref receiveBuffer, receiveBuffer.Length );
+
+			if( receiveSize > 0 )
+			{
+				byte[] message = new byte[receiveSize];
+				
+				Array.Copy( receiveBuffer, message, receiveSize );
+
+				ReceivePacket( notifierForServer, socket, message );
+			}
+		}
+	}
+
+	// receive packet
+	public void ReceivePacket( Dictionary<int, ReceiveNotifier> notifier, Socket socket, byte[] data )
+	{
+
 	}
 
 
