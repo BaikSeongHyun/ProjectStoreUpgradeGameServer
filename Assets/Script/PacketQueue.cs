@@ -19,8 +19,6 @@ public class PacketQueue
 
 	// input data & allocate infomation
 	byte[] tempData;
-	int tempSize;
-	int tempCompleteSize;
 	List<PacketInfo> packetList;
 
 	// object - use lock
@@ -30,8 +28,6 @@ public class PacketQueue
 	public PacketQueue()
 	{
 		tempData = new byte[2048];
-		tempSize = 0;
-		tempCompleteSize = 0;
 		streamBuffer = new MemoryStream();
 		packetList = new List<PacketInfo>();
 		lockObject = new object();

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.IO;
+using UnityEngine;
 
 public class Serializer
 {
-	MemoryStream memoryBuffer = null;
-	int memoryOffset = 0;
+	protected MemoryStream memoryBuffer = null;
+	protected int memoryOffset = 0;
 
 	// constructor -> default parameter
 	public Serializer()
@@ -16,6 +17,24 @@ public class Serializer
 	public byte[] GetSerializeData()
 	{
 		return memoryBuffer.ToArray();
+	}
+
+	// set deserialize data
+	public bool SetDeserializedData( byte[] data )
+	{
+		// clear buffer
+		Clear();
+
+		try
+		{
+			memoryBuffer.Write( data, 0, data.Length );
+		}
+		catch ( NullReferenceException e )
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	// return memory offset
@@ -45,8 +64,9 @@ public class Serializer
 			memoryBuffer.Write( data, 0, size );
 			memoryOffset += size;
 		}
-		catch
+		catch ( NullReferenceException e )
 		{
+			Debug.Log( "Serializer : Null Reference Expection - On Write Buffer" );
 			return false;
 		}
 

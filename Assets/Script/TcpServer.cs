@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Net;
 using System.Net.Sockets;
 
+[System.Serializable]
 public class TcpServer
 {
 	class AsyncData
@@ -31,8 +32,8 @@ public class TcpServer
 
 	// field - use connect client (default information)
 	Socket listenSocket = null;
-	string serverIP;
-	int port;
+	[SerializeField]string serverIP;
+	[SerializeField]int port = 9800;
 
 	//constructor - default
 	public TcpServer()
@@ -72,7 +73,6 @@ public class TcpServer
 		if( listenSocket == null )
 			return;
 
-
 		foreach ( Socket clientSocket in clientSockets )
 		{
 			try
@@ -82,13 +82,11 @@ public class TcpServer
 			catch ( SocketException e )
 			{
 				Debug.Log( e.ErrorCode );
-				Debug.Log( e.InnerException );
 				Debug.Log( "Server : Socket Exception - On Server Close " );
 			}
 			catch ( NullReferenceException e )
 			{
 				Debug.Log( e.Message );
-				Debug.Log( e.InnerException );
 				Debug.Log( "Server : Null Reference Exception - On Server Close " );
 			}
 		}
@@ -96,7 +94,6 @@ public class TcpServer
 		clientSockets.Clear();
 
 		listenSocket.Close();
-
 	}
 
 	// find local ip address
@@ -128,6 +125,7 @@ public class TcpServer
 		Socket listenSocket = (Socket) asyncResult.AsyncState;
 		Socket clientSocket = listenSocket.EndAccept( asyncResult );
 		clientSockets.Add( clientSocket );
+		Debug.Log( "Server : Connect Client -> IP : " + ( (IPEndPoint) clientSocket.RemoteEndPoint ).Address.ToString() + " / port : " + ( (IPEndPoint) clientSocket.RemoteEndPoint ).Port.ToString() );
 
 		if( OnAccepted != null )
 			OnAccepted( clientSocket );
@@ -179,14 +177,12 @@ public class TcpServer
 		{
 			DownClient( clientSocket );
 			Debug.Log( e.Message );
-			Debug.Log( e.InnerException );
 			Debug.Log( "Server : Wrong Data structure - On ReceiveAsyncCallback" );
 		}
 		catch ( SocketException e )
 		{
 			DownClient( clientSocket );
 			Debug.Log( e.ErrorCode );
-			Debug.Log( e.InnerException );
 			Debug.Log( "Server : Disconnected client - On ReceiveAsyncCallback" );
 		}
 
@@ -200,14 +196,12 @@ public class TcpServer
 		{
 			DownClient( clientSocket );
 			Debug.Log( e.ErrorCode );
-			Debug.Log( e.InnerException );
 			Debug.Log( "Server :  Socket Exception - On ReceiveAsyncCallback" );
 		}
 		catch ( NullReferenceException e )
 		{
 			DownClient( clientSocket );
 			Debug.Log( e.Message );
-			Debug.Log( e.InnerException );
 			Debug.Log( "Server : Wrong Data structure - On ReceiveAsyncCallback" );
 		}
 	}
@@ -226,14 +220,12 @@ public class TcpServer
 				{
 					DownClient( client );
 					Debug.Log( e.ErrorCode );
-					Debug.Log( e.InnerException );
 					Debug.Log( "Server :  Socket Exception - On Send" );
 				}
 				catch ( NullReferenceException e )
 				{
 					DownClient( client );
 					Debug.Log( e.Message );
-					Debug.Log( e.InnerException );
 				}
 			}
 		}
@@ -250,13 +242,11 @@ public class TcpServer
 		catch ( SocketException e )
 		{
 			Debug.Log( e.ErrorCode );
-			Debug.Log( e.InnerException );
 			Debug.Log( "Server : Socket Exception - Down Client" );
 		}
 		catch ( NullReferenceException e )
 		{
 			Debug.Log( e.Message );
-			Debug.Log( e.InnerException );
 			Debug.Log( "Server : Null Reference Exception - Down Client" );
 		}
 	}

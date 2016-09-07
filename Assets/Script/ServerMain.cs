@@ -13,8 +13,10 @@ public class ServerMain : MonoBehaviour
 	[SerializeField] TcpServer networkProcesser;
 
 	// queue -> input / output check point
-	[SerializeField] PacketQueue receiveQueue;
-	[SerializeField] PacketQueue sendQueue;
+	PacketQueue receiveQueue;
+	PacketQueue sendQueue;
+	Queue<Socket> indexClientQueue;
+	object lockReceiveQueue = new object();
 
 	// delegate -> for packtet receive check
 	public delegate void ReceiveNotifier(Socket socket,byte[] data);
@@ -33,14 +35,15 @@ public class ServerMain : MonoBehaviour
 		// allocate queue
 		receiveQueue = new PacketQueue();
 		sendQueue = new PacketQueue();
+		indexClientQueue = new Queue<Socket>();
 
 		// allocate buffer
 		receiveBuffer = new byte[bufferSize];
 		sendBuffer = new byte[bufferSize];
 
-
-		//server process active 
+		// server process active 
 		networkProcesser = new TcpServer();
+		networkProcesser.OnReceived += OnReceivedPacketFromClient;
 	}
 
 	// start main server
@@ -52,7 +55,7 @@ public class ServerMain : MonoBehaviour
 	// server process -> receive from client
 	void Update()
 	{
-
+		ReceiveFromClient();
 	}
 
 	// server system off
@@ -61,8 +64,34 @@ public class ServerMain : MonoBehaviour
 		networkProcesser.ServerClose();
 	}
 
-	// public method
+	// private method
+	// packet seperate id / data
+	private bool SeperatePacket( byte[] originalData, out int packetID, out byte[] seperatedData )
+	{
+		PacketHeader header = new PacketHeader();
+		HeaderSerializer serializer = new HeaderSerializer();
 
+		serializer.SetDeserializedData( originalData );
+		serializer.Deserialize( ref header );
+
+		seperatedData = null;
+
+		packetID = 0;
+		return true;
+	}
+
+	// enqueue - receive queue
+	private void OnReceivedPacketFromClient( Socket socket, byte[] message, int size )
+	{
+		receiveQueue.Enqueue( message, size );
+
+		lock ( lockReceiveQueue )
+		{
+			indexClientQueue.Enqueue( socket );
+		}
+	}
+
+	// public method
 	// start main server
 	public void StartServer()
 	{
@@ -70,7 +99,7 @@ public class ServerMain : MonoBehaviour
 	}
 
 	// receive
-	public void Receive( Socket socket )
+	public void ReceiveFromClient()
 	{
 		int count = receiveQueue.Count;
 
@@ -79,23 +108,41 @@ public class ServerMain : MonoBehaviour
 			int receiveSize = 0;
 			receiveSize = receiveQueue.Dequeue( ref receiveBuffer, receiveBuffer.Length );
 
+			Socket clientSocket;
+			lock ( lockReceiveQueue )
+			{
+				clientSocket = indexClientQueue.Dequeue();
+			}
+
+			// packet precess 
 			if( receiveSize > 0 )
 			{
 				byte[] message = new byte[receiveSize];
 				
 				Array.Copy( receiveBuffer, message, receiveSize );
 
-				ReceivePacket( notifierForServer, socket, message );
+				int packetID;
+				byte[] packetData;
+
+				// packet seperate -> header / data
+				SeperatePacket( message, out packetID, out packetData );
+
+				ReceiveNotifier notifier;
+
+				// use notifier
+				try
+				{
+					notifierForServer.TryGetValue( packetID, out notifier );
+					notifier( clientSocket, packetData );			
+				}
+				catch ( NullReferenceException e )
+				{
+					Debug.Log( e.Message );
+					Debug.Log( "Server : Null Reference Exception - On Receive (use notifier)" );
+				}
 			}
 		}
 	}
-
-	// receive packet
-	public void ReceivePacket( Dictionary<int, ReceiveNotifier> notifier, Socket socket, byte[] data )
-	{
-
-	}
-
 
 	// server receive notifier register
 	public void RegisterServerReceivePacket( int packetID, ReceiveNotifier notifier )
@@ -108,6 +155,4 @@ public class ServerMain : MonoBehaviour
 	{
 		notifierForServer.Remove( packetID );
 	}
-
-
 }

@@ -9,11 +9,13 @@ public class Item
 	[SerializeField] float makeTime;
 	[SerializeField] Item[] recipe;
 	[SerializeField] int[] recipeCount;
+	[SerializeField] bool onDisplay;
+	[SerializeField] float storeExp;
 	[SerializeField] Store.StoreType Type;
 
 	public Item()
 	{
-		name = "TutorialBread";
+		
 	}
 }
 
