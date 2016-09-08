@@ -11,6 +11,7 @@ public class ServerMain : MonoBehaviour
 {
 	// server socket
 	[SerializeField] TcpServer networkProcesser;
+	// [SerializeField] ??? eventProcess
 
 	// queue -> input / output check point
 	PacketQueue receiveQueue;
