@@ -11,9 +11,10 @@ public class ServerMain : MonoBehaviour
 {
 	// test data
 	[SerializeField]string[] socket;
-
+	[SerializeField]string[] table;
+ 
 	// server socket
-	[SerializeField] TcpServer networkProcessor;
+	[SerializeField] NetworkProcessor networkProcessor;
 	[SerializeField] DataProcessor dataProcessor;
 
 	// queue -> input / output check point
@@ -23,7 +24,7 @@ public class ServerMain : MonoBehaviour
 	object lockReceiveQueue = new object();
 
 	// delegate -> for packtet receive check
-	public delegate void ReceiveNotifier(Socket socket,byte[] data);
+	public delegate void ReceiveNotifier(Socket socket, byte[] data);
 
 	// server notifier set -> socket library
 	Dictionary <int, ReceiveNotifier> notifierForServer = new Dictionary<int, ReceiveNotifier>();
@@ -46,14 +47,14 @@ public class ServerMain : MonoBehaviour
 		sendBuffer = new byte[bufferSize];
 
 		// network process active 
-		networkProcessor = new TcpServer();
-		networkProcessor.OnReceived += OnReceivedPacketFromClient;
+		networkProcessor = new NetworkProcessor();
+		networkProcessor.OnReceived += OnReceivePacketFromClient;
 	
 		// data process active
 		dataProcessor = new DataProcessor( "PlayerData.data", System.IO.FileMode.OpenOrCreate );
 
 		// set receive notifier
-		RegisterServerReceivePacket((int) ClientToServerPacket.JoinRequest, ReceiveJoinRequest);
+		RegisterServerReceivePacket( (int) ClientToServerPacket.JoinRequest, ReceiveJoinRequest );
 	}
 
 	// start main server
@@ -67,8 +68,10 @@ public class ServerMain : MonoBehaviour
 	{
 		ReceiveFromClient();
 		socket = new string[networkProcessor.clientSockets.Count];
-		for(int i =0; i < socket.Length; i++)
-			socket[i] = networkProcessor.clientSockets[i].ToString();
+		for ( int i = 0; i < socket.Length; i++ )
+		{
+			socket[i] = ( (IPEndPoint) networkProcessor.clientSockets[i].RemoteEndPoint ).Address.ToString();
+		}			
 	}
 
 	// server system off
@@ -94,7 +97,7 @@ public class ServerMain : MonoBehaviour
 	}
 
 	// enqueue - receive queue
-	private void OnReceivedPacketFromClient( Socket socket, byte[] message, int size )
+	private void OnReceivePacketFromClient( Socket socket, byte[] message, int size )
 	{
 		receiveQueue.Enqueue( message, size );
 
@@ -139,7 +142,7 @@ public class ServerMain : MonoBehaviour
 
 				// packet seperate -> header / data
 				SeperatePacket( message, out packetID, out packetData );
-
+				Debug.Log( packetID );
 				ReceiveNotifier notifier;
 
 				// use notifier
@@ -178,6 +181,8 @@ public class ServerMain : MonoBehaviour
 		JoinRequestPacket receivePacket = new JoinRequestPacket( data );
 		JoinRequestData joinRequestData = receivePacket.GetData();
 	
+		Debug.Log( joinRequestData.id );
+
 		// process - player join
 		bool result;
 		string resultString;
@@ -192,7 +197,7 @@ public class ServerMain : MonoBehaviour
 		JoinResultPacket sendPacket = new JoinResultPacket( sendData );
 
 		// send result packet
-		networkProcessor.Send( clientSocket, sendPacket.GetPacketData(), sendPacket.GetPacketData().Length );
+		networkProcessor.Send( clientSocket, sendPacket );
 
 	}
 

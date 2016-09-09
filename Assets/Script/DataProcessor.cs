@@ -9,7 +9,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 public class DataProcessor
 {
 	FileStream stream;
-	[SerializeField] Hashtable playerInformation;
+	public Hashtable playerInformation;
 	BinaryFormatter binaryFormatter;
 
 	// constuctor - no parameter
