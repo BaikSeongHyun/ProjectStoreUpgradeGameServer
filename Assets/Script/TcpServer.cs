@@ -28,7 +28,7 @@ public class TcpServer
 	public event DisconnectClient Disconnected;
 
 	// added client socket list
-	[SerializeField] List<Socket> clientSockets;
+	public List<Socket> clientSockets;
 
 	// field - use connect client (default information)
 	Socket listenSocket = null;
@@ -142,6 +142,7 @@ public class TcpServer
 		}
 		catch
 		{
+			Debug.Log( "Error" );
 			DownClient( clientSocket );
 		}
 
@@ -162,9 +163,18 @@ public class TcpServer
 		{
 			asyncData.messageLength = clientSocket.EndReceive( asyncResult );
 		}
-		catch
+		catch (NullReferenceException e)
 		{
 			DownClient( clientSocket );
+			Debug.Log( e.Message );
+			Debug.Log( "Server : Wrong Data structure - On Receive Async Callback (message receive)" );
+			return;
+		}
+		catch(SocketException e)
+		{
+			DownClient( clientSocket );
+			Debug.Log( e.ErrorCode );
+			Debug.Log( "Server : Disconnected client - On Receive Async Callback (message receive)" );
 			return;
 		}
 
@@ -177,13 +187,13 @@ public class TcpServer
 		{
 			DownClient( clientSocket );
 			Debug.Log( e.Message );
-			Debug.Log( "Server : Wrong Data structure - On ReceiveAsyncCallback" );
+			Debug.Log( "Server : Wrong Data structure - On Receive Async Callback (receive process)" );
 		}
 		catch ( SocketException e )
 		{
 			DownClient( clientSocket );
 			Debug.Log( e.ErrorCode );
-			Debug.Log( "Server : Disconnected client - On ReceiveAsyncCallback" );
+			Debug.Log( "Server : Disconnected client - On Receive Async Callback (receive process)" );
 		}
 
 		// reset client socket

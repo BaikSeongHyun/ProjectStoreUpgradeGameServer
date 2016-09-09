@@ -12,12 +12,17 @@ public class Player
 	Item[] haveItem;
 	DecorateObject[] haveDecorateObject;
 
-	//constructor -> 
-	public Player(string _playerID, string _password)
+	// property
+	public string ID { get { return playerID; } }
+
+	//constructor -> join
+	public Player( string _playerID, string _password )
 	{
 		playerID = _playerID;
 		password = _password;
 	}
+
+
 }
 
 

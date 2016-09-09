@@ -9,9 +9,12 @@ using System.Net.Sockets;
 //server main stream
 public class ServerMain : MonoBehaviour
 {
+	// test data
+	[SerializeField]string[] socket;
+
 	// server socket
-	[SerializeField] TcpServer networkProcesser;
-	// [SerializeField] ??? eventProcess
+	[SerializeField] TcpServer networkProcessor;
+	[SerializeField] DataProcessor dataProcessor;
 
 	// queue -> input / output check point
 	PacketQueue receiveQueue;
@@ -42,9 +45,15 @@ public class ServerMain : MonoBehaviour
 		receiveBuffer = new byte[bufferSize];
 		sendBuffer = new byte[bufferSize];
 
-		// server process active 
-		networkProcesser = new TcpServer();
-		networkProcesser.OnReceived += OnReceivedPacketFromClient;
+		// network process active 
+		networkProcessor = new TcpServer();
+		networkProcessor.OnReceived += OnReceivedPacketFromClient;
+	
+		// data process active
+		dataProcessor = new DataProcessor( "PlayerData.data", System.IO.FileMode.OpenOrCreate );
+
+		// set receive notifier
+		RegisterServerReceivePacket((int) ClientToServerPacket.JoinRequest, ReceiveJoinRequest);
 	}
 
 	// start main server
@@ -57,12 +66,15 @@ public class ServerMain : MonoBehaviour
 	void Update()
 	{
 		ReceiveFromClient();
+		socket = new string[networkProcessor.clientSockets.Count];
+		for(int i =0; i < socket.Length; i++)
+			socket[i] = networkProcessor.clientSockets[i].ToString();
 	}
 
 	// server system off
 	void OnApplicationQuit()
 	{
-		networkProcesser.ServerClose();
+		networkProcessor.ServerClose();
 	}
 
 	// private method
@@ -96,7 +108,7 @@ public class ServerMain : MonoBehaviour
 	// start main server
 	public void StartServer()
 	{
-		networkProcesser.ServerStart();
+		networkProcessor.ServerStart();
 	}
 
 	// receive
@@ -156,4 +168,47 @@ public class ServerMain : MonoBehaviour
 	{
 		notifierForServer.Remove( packetID );
 	}
+
+
+	// receive section
+	// join request
+	public void ReceiveJoinRequest( Socket clientSocket, byte[] data )
+	{
+		// receive packet serialize 
+		JoinRequestPacket receivePacket = new JoinRequestPacket( data );
+		JoinRequestData joinRequestData = receivePacket.GetData();
+	
+		// process - player join
+		bool result;
+		string resultString;
+		result = dataProcessor.JoinPlayer( joinRequestData.id, joinRequestData.password, out resultString );
+
+		// make result data
+		JoinResultData sendData = new JoinResultData();
+		sendData.joinResult = result;
+		sendData.message = resultString;
+
+		// make result packet
+		JoinResultPacket sendPacket = new JoinResultPacket( sendData );
+
+		// send result packet
+		networkProcessor.Send( clientSocket, sendPacket.GetPacketData(), sendPacket.GetPacketData().Length );
+
+	}
+
+	// login request
+	public void ReceiveLoginRequest( Socket clientSocket, byte[] data )
+	{
+		// packet serialize 
+		LoginRequestPacket packet = new LoginRequestPacket( data );
+		LoginRequestData joinRequestData = packet.GetData();
+
+		// process
+
+
+
+
+		// send result packet
+	}
+
 }
