@@ -198,8 +198,6 @@ public class ServerMain : MonoBehaviour
 		JoinRequestPacket receivePacket = new JoinRequestPacket( data );
 		JoinRequestData joinRequestData = receivePacket.GetData();
 	
-		Debug.Log( joinRequestData.id );
-
 		// process - player join
 		bool result;
 		string resultString;
