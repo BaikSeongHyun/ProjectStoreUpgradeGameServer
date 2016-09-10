@@ -33,8 +33,8 @@ public class JoinRequestSerializer : Serializer
 			return false;
 
 		// packet -> multiple string -> seperate stirng 
-		string linkedString = null;
-		result &= Deserialize( ref linkedString, (int) GetDataSize() );
+		string linkedString;
+		result &= Deserialize( out linkedString, (int) GetDataSize() );
 
 		string[] dataSet = linkedString.Split( '.' );
 

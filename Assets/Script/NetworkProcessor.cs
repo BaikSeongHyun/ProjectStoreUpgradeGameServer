@@ -59,8 +59,6 @@ public class NetworkProcessor
 
 		byte[] headerData = null;
 	
-		Debug.Log( header.id );
-
 		try
 		{
 			serializer.Serialize( header );
