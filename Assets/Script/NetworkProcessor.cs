@@ -32,8 +32,8 @@ public class NetworkProcessor
 
 	// field - use connect client (default information)
 	Socket listenSocket = null;
-	[SerializeField]string serverIP;
-	[SerializeField]int port = 9800;
+	[SerializeField] string serverIP;
+	[SerializeField] int port = 9800;
 
 	//constructor - default
 	public NetworkProcessor()
@@ -59,6 +59,8 @@ public class NetworkProcessor
 
 		byte[] headerData = null;
 	
+		Debug.Log( header.id );
+
 		try
 		{
 			serializer.Serialize( header );

@@ -24,7 +24,7 @@ public class ServerMain : MonoBehaviour
 	object lockReceiveQueue = new object();
 
 	// delegate -> for packtet receive check
-	public delegate void ReceiveNotifier(Socket socket, byte[] data);
+	public delegate void ReceiveNotifier(Socket socket,byte[] data);
 
 	// server notifier set -> socket library
 	Dictionary <int, ReceiveNotifier> notifierForServer = new Dictionary<int, ReceiveNotifier>();
@@ -90,9 +90,24 @@ public class ServerMain : MonoBehaviour
 		serializer.SetDeserializedData( originalData );
 		serializer.Deserialize( ref header );
 
-		seperatedData = null;
+		int headerSize = Marshal.SizeOf( header.id ) + Marshal.SizeOf( header.length );
+		int packetDataSize = originalData.Length - headerSize;
+		byte[] packetData = null;
 
-		packetID = 0;
+		if( packetDataSize > 0 )
+		{
+			packetData = new byte[packetDataSize];
+			Buffer.BlockCopy( originalData, headerSize, packetData, 0, packetData.Length );
+		}
+		else
+		{
+			packetID = header.id;
+			seperatedData = null;
+			return false;
+		}
+		packetID = header.id;
+		seperatedData = packetData;
+
 		return true;
 	}
 
@@ -142,8 +157,10 @@ public class ServerMain : MonoBehaviour
 
 				// packet seperate -> header / data
 				SeperatePacket( message, out packetID, out packetData );
-				Debug.Log( packetID );
+			
 				ReceiveNotifier notifier;
+
+				packetID = 1;
 
 				// use notifier
 				try
