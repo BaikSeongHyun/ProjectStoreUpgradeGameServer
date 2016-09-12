@@ -1,12 +1,15 @@
-﻿using System;
+﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
 // check point Queue
+[System.Serializable]
 public class PacketQueue
 {
 	// inner class packet information
+	[System.Serializable]
 	class PacketInfo
 	{
 		public int offset;
@@ -15,11 +18,11 @@ public class PacketQueue
 
 	// write memory
 	MemoryStream streamBuffer;
-	int memoryOffset;
+	[SerializeField] int memoryOffset;
 
 	// input data & allocate infomation
-	byte[] tempData;
-	List<PacketInfo> packetList;
+	[SerializeField] byte[] tempData;
+	[SerializeField] List<PacketInfo> packetList;
 
 	// object - use lock
 	object lockObject;

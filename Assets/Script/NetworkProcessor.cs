@@ -19,7 +19,7 @@ public class NetworkProcessor
 	// event fleld
 	public delegate void OnAcceptedEvent(Socket socket);
 
-	public delegate void OnReceivedEvent(Socket socket, byte[] msg, int size);
+	public delegate void OnReceivedEvent(Socket socket,byte[] msg,int size);
 
 	public delegate void DisconnectClient(Socket socket);
 
@@ -67,6 +67,8 @@ public class NetworkProcessor
 		{
 
 		}
+
+		headerData = serializer.GetSerializeData();
 
 		// header / packet data combine
 		byte[] data = new byte[headerData.Length + packetData.Length];
@@ -257,7 +259,7 @@ public class NetworkProcessor
 	public int Send<T,U>( Socket clientSocket, Packet<T,U> packet )
 	{
 		byte[] data = CreatePacketStream<T,U>( packet );
-
+		Debug.Log( "Send Data" );
 		foreach ( Socket client in clientSockets )
 		{
 			if( client == clientSocket )

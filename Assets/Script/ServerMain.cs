@@ -10,16 +10,17 @@ using System.Net.Sockets;
 public class ServerMain : MonoBehaviour
 {
 	// test data
-	[SerializeField]string[] socket;
-	[SerializeField]string[] table;
- 
+	[SerializeField] string[] socket;
+	[SerializeField] string[] table;
+	[SerializeField] int packetIDForTest;
+
 	// server socket
 	[SerializeField] NetworkProcessor networkProcessor;
 	[SerializeField] DataProcessor dataProcessor;
 
 	// queue -> input / output check point
-	PacketQueue receiveQueue;
-	PacketQueue sendQueue;
+	[SerializeField] PacketQueue receiveQueue;
+	[SerializeField]PacketQueue sendQueue;
 	Queue<Socket> indexClientQueue;
 	object lockReceiveQueue = new object();
 
@@ -28,6 +29,7 @@ public class ServerMain : MonoBehaviour
 
 	// server notifier set -> socket library
 	Dictionary <int, ReceiveNotifier> notifierForServer = new Dictionary<int, ReceiveNotifier>();
+	[SerializeField] string activateMethodName;
 
 	// byte array data
 	byte[] receiveBuffer;
@@ -55,6 +57,7 @@ public class ServerMain : MonoBehaviour
 
 		// set receive notifier
 		RegisterServerReceivePacket( (int) ClientToServerPacket.JoinRequest, ReceiveJoinRequest );
+		RegisterServerReceivePacket( (int) ClientToServerPacket.LoginRequest, ReceiveLoginRequest );
 	}
 
 	// start main server
@@ -64,7 +67,7 @@ public class ServerMain : MonoBehaviour
 	}
 
 	// server process -> receive from client
-	void Update()
+	void FixedUpdate()
 	{
 		ReceiveFromClient();
 		socket = new string[networkProcessor.clientSockets.Count];
@@ -105,9 +108,9 @@ public class ServerMain : MonoBehaviour
 			seperatedData = null;
 			return false;
 		}
+
 		packetID = header.id;
 		seperatedData = packetData;
-
 		return true;
 	}
 
@@ -151,22 +154,22 @@ public class ServerMain : MonoBehaviour
 				byte[] message = new byte[receiveSize];
 				
 				Array.Copy( receiveBuffer, message, receiveSize );
-
+							
 				int packetID;
 				byte[] packetData;
 
 				// packet seperate -> header / data
 				SeperatePacket( message, out packetID, out packetData );
-			
+	
 				ReceiveNotifier notifier;
 
-				packetID = 1;
-
 				// use notifier
+				notifierForServer.TryGetValue( packetID, out notifier );
+				activateMethodName = notifier.Method.ToString();
+				notifier( clientSocket, packetData );	
 				try
-				{
-					notifierForServer.TryGetValue( packetID, out notifier );
-					notifier( clientSocket, packetData );			
+				{				
+							
 				}
 				catch ( NullReferenceException e )
 				{
@@ -213,7 +216,6 @@ public class ServerMain : MonoBehaviour
 
 		// send result packet
 		networkProcessor.Send( clientSocket, sendPacket );
-
 	}
 
 	// login request
@@ -224,8 +226,6 @@ public class ServerMain : MonoBehaviour
 		LoginRequestData joinRequestData = packet.GetData();
 
 		// process
-
-
 
 
 		// send result packet

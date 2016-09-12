@@ -32,16 +32,16 @@ public class Serializer
 		catch ( NullReferenceException e )
 		{
 			Debug.Log( e.Message );
+			Debug.Log( e.Data );
 			return false;
 		}
-
 		return true;
 	}
 
 	// return memory offset
-	public int GetDataSize()
+	public long GetDataSize()
 	{
-		return memoryOffset;
+		return memoryBuffer.Length;
 	}
 
 	// clear buffer
@@ -81,14 +81,13 @@ public class Serializer
 		try
 		{
 			memoryBuffer.Position = memoryOffset;
-			memoryBuffer.Write( data, 0, size );
+			memoryBuffer.Read( data, 0, size );
 			memoryOffset += size;
 		}
 		catch
 		{
 			return false;
 		}
-
 		return true;
 	}
 		
@@ -206,7 +205,7 @@ public class Serializer
 
 		return false;
 	}
-
+	// deserialize - byte
 	protected bool Deserialize( ref byte element )
 	{
 		int size = sizeof(byte);
