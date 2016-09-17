@@ -15,11 +15,17 @@ public class Player
 	// property
 	public string ID { get { return playerID; } }
 
+	public string Password { get { return password; } }
+
 	//constructor -> join
 	public Player( string _playerID, string _password )
 	{
 		playerID = _playerID;
 		password = _password;
+		availableMoney = 0;
+		haveStore = null;
+		haveItem = null;
+		haveDecorateObject = null;
 	}
 
 

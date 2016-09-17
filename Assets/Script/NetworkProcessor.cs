@@ -16,6 +16,7 @@ public class NetworkProcessor
 		public byte[] message = new byte[messageMaxLength];
 		public int messageLength;
 	}
+
 	// event fleld
 	public delegate void OnAcceptedEvent(Socket socket);
 
@@ -194,9 +195,12 @@ public class NetworkProcessor
 
 	public void ReceiveAsyncCallback( IAsyncResult asyncResult )
 	{
+		
 		// data link
 		AsyncData asyncData = (AsyncData) asyncResult.AsyncState;
 		Socket clientSocket = asyncData.clientSocket;
+		if( !clientSocket.Connected )
+			DownClient( clientSocket );
 
 		// message receive
 		try
@@ -259,7 +263,11 @@ public class NetworkProcessor
 	public int Send<T,U>( Socket clientSocket, Packet<T,U> packet )
 	{
 		byte[] data = CreatePacketStream<T,U>( packet );
+
+		AnalysisPacket( data );
+
 		Debug.Log( "Send Data" );
+
 		foreach ( Socket client in clientSockets )
 		{
 			if( client == clientSocket )
@@ -285,11 +293,64 @@ public class NetworkProcessor
 		return -1;
 	}
 
+	public void AnalysisPacket( byte[] data )
+	{
+		int packetID;
+		byte[] packetData;
+
+		SeperatePacket( data, out packetID, out packetData );
+		Debug.Log( packetData.Length );
+		ReceiveLoginResult( packetData );		
+	}
+
+	public bool SeperatePacket( byte[] originalData, out int packetID, out byte[] seperatedData )
+	{
+		PacketHeader header = new PacketHeader();
+		HeaderSerializer serializer = new HeaderSerializer();
+
+		serializer.SetDeserializedData( originalData );
+		serializer.Deserialize( ref header );
+
+		Debug.Log( "Packet ID : " + header.id.ToString() + " , Packet Length :" + header.length.ToString() ); 
+		int headerSize = Marshal.SizeOf( header.id ) + Marshal.SizeOf( header.length );
+		int packetDataSize = originalData.Length - headerSize;
+		byte[] packetData = null;
+
+		if( packetDataSize > 0 )
+		{
+			packetData = new byte[packetDataSize];
+			Buffer.BlockCopy( originalData, headerSize, packetData, 0, packetData.Length );
+		}
+		else
+		{
+			packetID = header.id;
+			seperatedData = null;
+			return false;
+		}
+
+		packetID = header.id;
+		seperatedData = packetData;
+		return true;
+	}
+
+	public void ReceiveLoginResult( byte[] data )
+	{
+		// receive packet serialize 
+		LoginResultPacket receivePacket = new LoginResultPacket( data );
+		LoginResultData joinResultData = receivePacket.GetData();
+
+		Debug.Log( joinResultData.loginResult );
+		Debug.Log( joinResultData.message );
+	}
+
 	public void DownClient( Socket clientSocket )
 	{
 		try
 		{
 			clientSocket.Close();
+			clientSockets.Remove( clientSocket );	
+			if( Disconnected != null )
+				Disconnected( clientSocket );
 		}
 		catch ( SocketException e )
 		{

@@ -24,6 +24,9 @@ public class ServerMain : MonoBehaviour
 	Queue<Socket> indexClientQueue;
 	object lockReceiveQueue = new object();
 
+	// delegate -> for disconnect client
+	public delegate void DisconnectCilent(Socket clientSocket);
+
 	// delegate -> for packtet receive check
 	public delegate void ReceiveNotifier(Socket socket,byte[] data);
 
@@ -223,12 +226,30 @@ public class ServerMain : MonoBehaviour
 	{
 		// packet serialize 
 		LoginRequestPacket packet = new LoginRequestPacket( data );
-		LoginRequestData joinRequestData = packet.GetData();
+		LoginRequestData loginRequestData = packet.GetData();
 
 		// process
+		bool result;
+		string resultString;
+		result = dataProcessor.LoginPlayer( loginRequestData.id, loginRequestData.password, out resultString );
 
+		// make result data
+		LoginResultData sendData = new LoginResultData();
+		sendData.loginResult = result;
+		sendData.message = resultString;
+
+		//make result packet
+		LoginResultPacket sendPacket = new LoginResultPacket( sendData );
 
 		// send result packet
+		networkProcessor.Send( clientSocket, sendPacket );
+	}
+
+	// store make request
+	public void ReceiveStoreMakeRequest(Socket client, byte[] data)
+	{
+		//
+
 	}
 
 }
