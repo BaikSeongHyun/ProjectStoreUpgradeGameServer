@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using MySql.Data.MySqlClient;
 using System;
 using System.IO;
 using System.Collections;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine;
 
 [System.Serializable]
 public class DataProcessor
@@ -11,6 +12,9 @@ public class DataProcessor
 	// file streaming
 	FileStream stream;
 	BinaryFormatter binaryFormatter;
+	
+	// Database connector
+	// DatabaseConnector connector;
 
 	// player data process
 	public Hashtable playerInformation;
