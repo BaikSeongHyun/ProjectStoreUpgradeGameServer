@@ -1,0 +1,10 @@
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\bin\Debug\ProjectStoreUpgradeGameServer.exe.config
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\obj\Debug\ProjectStoreUpgradeGameServer.csprojResolveAssemblyReference.cache
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\obj\Debug\ProjectStoreUpgradeGameServer.Form1.resources
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\obj\Debug\ProjectStoreUpgradeGameServer.Properties.Resources.resources
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\obj\Debug\ProjectStoreUpgradeGameServer.csproj.GenerateResource.Cache
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\bin\Debug\ProjectStoreUpgradeGameServer.exe
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\bin\Debug\ProjectStoreUpgradeGameServer.pdb
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\obj\Debug\ProjectStoreUpgradeGameServer.exe
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\obj\Debug\ProjectStoreUpgradeGameServer.pdb
+c:\users\user\documents\visual studio 2015\Projects\ProjectStoreUpgradeGameServer\ProjectStoreUpgradeGameServer\bin\Debug\MySql.Data.dll
